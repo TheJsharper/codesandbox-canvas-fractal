@@ -8,13 +8,19 @@ body {
   font-family: sans-serif;
 }
 
-#canvas {
+#canvas1 {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   border: 5px;
-  border: 2px solid black;
+}
+
+#canvas2 {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: black;
 }
 
 

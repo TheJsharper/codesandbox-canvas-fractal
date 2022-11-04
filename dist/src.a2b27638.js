@@ -182,15 +182,22 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 function _classPrivateMethodInitSpec(obj, privateSet) { _checkPrivateRedeclaration(obj, privateSet); privateSet.add(obj); }
 function _checkPrivateRedeclaration(obj, privateCollection) { if (privateCollection.has(obj)) { throw new TypeError("Cannot initialize the same private elements twice on an object"); } }
 function _classPrivateMethodGet(receiver, privateSet, fn) { if (!privateSet.has(receiver)) { throw new TypeError("attempted to get private field on non-instance"); } return fn; }
-var canvas = document.getElementById("canvas");
+var canvas = document.getElementById("canvas1");
 var ctx = canvas.getContext("2d");
 canvas.width = 600;
 canvas.height = 600;
+var canvas2 = document.getElementById("canvas2");
+var ctx2 = canvas2.getContext("2d");
+canvas2.width = window.innerWidth;
+canvas2.height = window.innerHeight;
 console.log(ctx);
-ctx.lineWidth = 50;
+ctx.lineWidth = 10;
 ctx.lineCap = "round";
-ctx.strokeStyle = "green";
 ctx.fillStyle = "blue";
+ctx.shadowColor = "black";
+ctx.shadowOffsetY = 10;
+ctx.shadowOffsetX = 15;
+ctx.shadowBlur = 10;
 var _drawLine = /*#__PURE__*/new WeakSet();
 var Fractal = /*#__PURE__*/function () {
   function Fractal(width, height) {
@@ -198,13 +205,18 @@ var Fractal = /*#__PURE__*/function () {
     _classPrivateMethodInitSpec(this, _drawLine);
     this.width = width;
     this.height = height;
-    this.size = this.width * 0.4;
-    this.sides = 3;
-    this.maxLevel = 2;
+    this.size = this.width * 0.2;
+    this.sides = 6;
+    this.maxLevel = 5;
+    this.scale = 0.5;
+    this.spread = Math.random() * 2.8 + 0.1;
+    this.branches = 1;
+    this.color = "hsl(".concat(Math.random() * 360, ",100%, 50%)");
   }
   _createClass(Fractal, [{
     key: "draw",
     value: function draw(context) {
+      context.strokeStyle = this.color;
       context.save();
       context.translate(this.width / 2, this.height / 2);
       context.scale(1, 1);
@@ -224,19 +236,98 @@ function _drawLine2(context, level) {
   context.moveTo(0, 0);
   context.lineTo(this.size, 0);
   context.stroke();
-  context.save();
-  context.rotate(1);
-  _classPrivateMethodGet(this, _drawLine, _drawLine2).call(this, context, level + 1);
-  context.restore();
+  for (var i = 0; i < this.branches; i++) {
+    context.save();
+    context.translate(this.size - this.size / this.branches * i, 0);
+    context.scale(this.scale, this.scale);
+    context.save();
+    context.rotate(this.spread);
+    _classPrivateMethodGet(this, _drawLine, _drawLine2).call(this, context, level + 1);
+    context.restore();
+    context.save();
+    context.rotate(-this.spread);
+    _classPrivateMethodGet(this, _drawLine, _drawLine2).call(this, context, level + 1);
+    context.restore();
+    context.restore();
+  }
+}
+var Particle = /*#__PURE__*/function () {
+  function Particle(canvasWidth, canvasHeight, image) {
+    _classCallCheck(this, Particle);
+    this.canvasHeight = canvasHeight;
+    this.canvasWidth = canvasWidth;
+    this.image = image;
+    this.x = Math.random() * this.canvasWidth;
+    this.y = Math.random() * this.canvasHeight;
+    this.sizeModifier = Math.random() * 0.2 + 0.1;
+    this.width = this.image.width * this.sizeModifier;
+    this.height = this.image.height * this.sizeModifier;
+    this.speed = Math.random() * 1 + 0.2;
+    this.angle = 0;
+    this.va = Math.random() * 0.01 + 0.005;
+  }
+  _createClass(Particle, [{
+    key: "update",
+    value: function update() {
+      this.angle += this.va;
+      this.x += this.speed;
+      if (this.x > this.canvasWidth + this.width) this.x = -this.width;
+      this.y += this.speed;
+      if (this.y > this.canvasHeight + this.height) this.y = -this.height;
+    }
+  }, {
+    key: "draw",
+    value: function draw(context) {
+      context.save();
+      context.translate(this.x, this.y);
+      context.rotate(this.angle);
+      context.drawImage(this.image, -this.width / 2, -this.height / 2, this.width, this.height);
+      context.restore();
+    }
+  }]);
+  return Particle;
+}();
+var _initialize = /*#__PURE__*/new WeakSet();
+var Rain = /*#__PURE__*/function () {
+  function Rain(width, height, image) {
+    _classCallCheck(this, Rain);
+    _classPrivateMethodInitSpec(this, _initialize);
+    this.image = image;
+    this.width = width;
+    this.height = height;
+    this.numberOfParticles = 20;
+    this.particles = [];
+    _classPrivateMethodGet(this, _initialize, _initialize2).call(this);
+  }
+  _createClass(Rain, [{
+    key: "run",
+    value: function run(context) {
+      this.particles.forEach(function (particle) {
+        particle.draw(context);
+        particle.update();
+      });
+    }
+  }]);
+  return Rain;
+}();
+function _initialize2() {
+  for (var i = 0; i < this.numberOfParticles; i++) {
+    this.particles.push(new Particle(this.width, this.height, this.image));
+  }
 }
 var fractal1 = new Fractal(canvas.width, canvas.height);
 fractal1.draw(ctx);
-var Particle = /*#__PURE__*/_createClass(function Particle() {
-  _classCallCheck(this, Particle);
-});
-var Rain = /*#__PURE__*/_createClass(function Rain() {
-  _classCallCheck(this, Rain);
-});
+var fractalImage = new Image();
+fractalImage.src = canvas.toDataURL();
+fractalImage.onload = function () {
+  var rainEffect = new Rain(canvas2.width, canvas2.height, fractalImage);
+  function animate() {
+    ctx2.clearRect(0, 0, canvas2.width, canvas2.height);
+    rainEffect.run(ctx2);
+    requestAnimationFrame(animate);
+  }
+  animate();
+};
 },{"./styles.css":"src/styles.css"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
